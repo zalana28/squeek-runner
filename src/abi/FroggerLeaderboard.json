@@ -1,0 +1,199 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      { "name": "_playFee", "type": "uint256" },
+      { "name": "_submitFee", "type": "uint256" },
+      { "name": "_treasury", "type": "address" }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "name": "GameStarted",
+    "type": "event",
+    "inputs": [
+      { "name": "player", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "ScoreSubmitted",
+    "type": "event",
+    "inputs": [
+      { "name": "player", "type": "address", "indexed": true },
+      { "name": "name", "type": "string", "indexed": false },
+      { "name": "score", "type": "uint32", "indexed": true },
+      { "name": "level", "type": "uint16", "indexed": false },
+      { "name": "timestamp", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "TopScoresUpdated",
+    "type": "event",
+    "inputs": [
+      { "name": "position", "type": "uint8", "indexed": true },
+      { "name": "player", "type": "address", "indexed": true },
+      { "name": "score", "type": "uint32", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "PlayFeeUpdated",
+    "type": "event",
+    "inputs": [
+      { "name": "newFee", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "SubmitFeeUpdated",
+    "type": "event",
+    "inputs": [
+      { "name": "newFee", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "TreasuryUpdated",
+    "type": "event",
+    "inputs": [
+      { "name": "newTreasury", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "name": "recordPlay",
+    "type": "function",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "name": "submitScore",
+    "type": "function",
+    "inputs": [
+      { "name": "name", "type": "string" },
+      { "name": "score", "type": "uint32" },
+      { "name": "level", "type": "uint16" }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "name": "getTopScores",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "list",
+        "type": "tuple[]",
+        "components": [
+          { "name": "player", "type": "address" },
+          { "name": "name", "type": "string" },
+          { "name": "score", "type": "uint32" },
+          { "name": "level", "type": "uint16" },
+          { "name": "timestamp", "type": "uint64" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "getTopScore",
+    "type": "function",
+    "inputs": [{ "name": "idx", "type": "uint8" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          { "name": "player", "type": "address" },
+          { "name": "name", "type": "string" },
+          { "name": "score", "type": "uint32" },
+          { "name": "level", "type": "uint16" },
+          { "name": "timestamp", "type": "uint64" }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "hasActiveGame",
+    "type": "function",
+    "inputs": [{ "name": "player", "type": "address" }],
+    "outputs": [{ "name": "", "type": "bool" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "getStats",
+    "type": "function",
+    "inputs": [],
+    "outputs": [
+      { "name": "_totalPlays", "type": "uint256" },
+      { "name": "_totalScoresSubmitted", "type": "uint256" },
+      { "name": "_playFee", "type": "uint256" },
+      { "name": "_submitFee", "type": "uint256" },
+      { "name": "_treasury", "type": "address" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "name": "playFee",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "submitFee",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "treasury",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "personalBest",
+    "type": "function",
+    "inputs": [{ "name": "", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "gamesPlayed",
+    "type": "function",
+    "inputs": [{ "name": "", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "totalPlays",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "totalScoresSubmitted",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "name": "owner",
+    "type": "function",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }],
+    "stateMutability": "view"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "name": "squeek-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Squeek Runner — WHEELY9000 Arcade. Lane-crossing arcade whose pace comes from a real hamster's settled work on Squeekchain (Sepolia).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@coinbase/onchainkit": "^0.38.0",
+    "@farcaster/miniapp-sdk": "^0.2.3",
+    "@tanstack/react-query": "^5.62.0",
+    "ox": "^0.14.29",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.21.0",
+    "wagmi": "^2.13.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/react": "^18.3.10",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.0.0",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.61.1",
+    "vite": "^5.4.8"
+  }
+}
