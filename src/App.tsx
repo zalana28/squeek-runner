@@ -1,13 +1,26 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import WalletGate from './components/WalletGate';
-import GameCanvas from './components/GameCanvas';
+import GameCanvas, { type GamePhase } from './components/GameCanvas';
 import HUD from './components/HUD';
 import PauseOverlay from './components/PauseOverlay';
 import GameOverOverlay from './components/GameOverOverlay';
 import Leaderboard from './components/Leaderboard';
-import { setMuted, isMuted } from './lib/audio.js';
+import InfoPanel from './components/InfoPanel';
+import { setMuted } from './lib/audio.js';
+import type { EngineHud, RunResult } from './lib/engine.js';
+import { useSqueekPulse } from './hooks/useSqueekPulse.js';
 
-/** Hook to detect when custom font is loaded */
+const initialHud: EngineHud = {
+  score: 0,
+  rawScore: 0,
+  level: 1,
+  lives: 3,
+  highScore: 0,
+  charges: 0,
+  dashActive: false,
+  surgeActive: false,
+  tailwind: false,
+};
+
 function useFontReady() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -16,33 +29,22 @@ function useFontReady() {
   return ready;
 }
 
-/**
- * Game phases:
- *  'wallet'   — show WalletGate (must connect + recordPlay before playing)
- *  'starting' — re-arm a game session via recordPlay() before another play
- *  'playing'  — game is active
- *  'paused'   — game is paused
- *  'over'     — game over screen
- *  'leaderboard' — leaderboard overlay (on top of wallet or over)
- */
 export default function App() {
   const fontReady = useFontReady();
-  const [phase, setPhase] = useState('wallet'); // start at wallet gate
-  const [hud, setHud] = useState({ score: 0, level: 1, lives: 3, highScore: 0 });
-  const [finalScore, setFinalScore] = useState(0);
-  const [finalLevel, setFinalLevel] = useState(1);
+  const pulse = useSqueekPulse();
+  const [phase, setPhase] = useState<GamePhase>('menu');
+  const [hud, setHud] = useState<EngineHud>(initialHud);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [showLB, setShowLB] = useState(false);
-
-  // Settings
+  const [showInfo, setShowInfo] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
   const [crtEnabled, setCrtEnabled] = useState(true);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  // Close settings on outside click
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+    function handleClick(event: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
         setShowSettings(false);
       }
     }
@@ -50,73 +52,44 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showSettings]);
 
-  // Sync mute state
   useEffect(() => { setMuted(soundMuted); }, [soundMuted]);
 
-  // Called when wallet gate confirms recordPlay tx
-  const handleWalletReady = useCallback(() => {
-    setPhase('playing');
-  }, []);
-
-  // Game engine HUD updates
-  const handleScoreChange = useCallback((score: number, level: number, lives: number, highScore: number) => {
-    setHud({ score, level, lives, highScore });
-  }, []);
-
-  // Game over callback
-  const handleGameOver = useCallback((score: number, level: number) => {
-    setFinalScore(score);
-    setFinalLevel(level);
+  const handleScoreChange = useCallback((nextHud: EngineHud) => setHud(nextHud), []);
+  const handleGameOver = useCallback((result: RunResult) => {
+    setRunResult(result);
     setPhase('over');
   }, []);
 
-  // Pause / resume
+  const openInfo = useCallback(() => {
+    setPhase('paused');
+    setShowInfo(true);
+  }, []);
+  const closeInfo = useCallback(() => {
+    setShowInfo(false);
+    setPhase('playing');
+  }, []);
+
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        if (showSettings) { setShowSettings(false); e.preventDefault(); return; }
-        if (showLB) { setShowLB(false); e.preventDefault(); return; }
-        if (phase === 'playing') { setPhase('paused'); e.preventDefault(); return; }
-        if (phase === 'paused') { setPhase('playing'); e.preventDefault(); return; }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        if (showInfo) { closeInfo(); event.preventDefault(); return; }
+        if (showSettings) { setShowSettings(false); event.preventDefault(); return; }
+        if (showLB) { setShowLB(false); event.preventDefault(); return; }
+        if (phase === 'playing') { setPhase('paused'); event.preventDefault(); return; }
+        if (phase === 'paused') { setPhase('playing'); event.preventDefault(); return; }
       }
-      if (e.key === 'p' || e.key === 'P') {
+      if (showInfo) return;
+      if (event.key === 'p' || event.key === 'P') {
         if (phase === 'playing') setPhase('paused');
         else if (phase === 'paused') setPhase('playing');
       }
-      // M key to toggle mute during gameplay
-      if (e.key === 'm' || e.key === 'M') {
-        if (phase === 'playing' || phase === 'paused') {
-          setSoundMuted(m => !m);
-        }
+      if (event.key === 'm' || event.key === 'M') {
+        if (phase === 'playing' || phase === 'paused') setSoundMuted((muted) => !muted);
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase, showLB, showSettings]);
-
-  // Play again (from game over) — must re-arm a game session via recordPlay()
-  const handlePlayAgain = useCallback(() => {
-    setPhase('starting');
-  }, []);
-
-  // Cancel re-entry from the "starting" gate — return to the game over screen.
-  const handleCancelStart = useCallback(() => {
-    setPhase('over');
-  }, []);
-
-  // Quit to wallet gate
-  const handleQuit = useCallback(() => {
-    setPhase('wallet');
-  }, []);
-
-  // Leaderboard open/close
-  const handleOpenLB = useCallback(() => {
-    setShowLB(true);
-  }, []);
-
-  const handleCloseLB = useCallback(() => {
-    setShowLB(false);
-  }, []);
+  }, [phase, showLB, showSettings, showInfo, closeInfo]);
 
   const isPlaying = phase === 'playing';
 
@@ -131,7 +104,6 @@ export default function App() {
 
   return (
     <div className={isPlaying ? 'playing' : ''}>
-      {/* Ambient background effects — hidden during gameplay for performance */}
       {!isPlaying && (
         <>
           <div className="ambient-grid" />
@@ -146,78 +118,64 @@ export default function App() {
         </>
       )}
 
-      {/* CRT overlay effect */}
       {crtEnabled && <div className="crt-overlay" />}
 
-      {/* Settings gear — always visible except during play */}
       {!isPlaying && (
         <div className="settings-container" ref={settingsRef}>
-          <button
-            className="settings-gear"
-            onClick={() => setShowSettings(s => !s)}
-            aria-label="Settings"
-          >
-            ⚙
+          <button type="button" className="settings-gear" onClick={() => setShowSettings((show) => !show)} aria-label="Settings">
+            SET
           </button>
           {showSettings && (
             <div className="settings-menu" role="menu">
-              <button className="settings-item" onClick={() => {
-                const next = !soundMuted;
-                setSoundMuted(next);
-              }}>
-                {soundMuted ? '🔇 Sound: OFF' : '🔊 Sound: ON'}
+              <button type="button" className="settings-item" onClick={() => setSoundMuted((muted) => !muted)}>
+                Sound: {soundMuted ? 'OFF' : 'ON'}
               </button>
-              <button className="settings-item" onClick={() => {
-                setCrtEnabled(c => !c);
-              }}>
-                {crtEnabled ? '📺 CRT Effect: ON' : '📺 CRT Effect: OFF'}
+              <button type="button" className="settings-item" onClick={() => setCrtEnabled((enabled) => !enabled)}>
+                CRT Effect: {crtEnabled ? 'ON' : 'OFF'}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Game canvas — always mounted, engine starts/stops based on phase */}
-      <GameCanvas
-        playing={isPlaying}
-        onScoreChange={handleScoreChange}
-        onGameOver={handleGameOver}
-      />
-
-      {/* HUD — visible during play */}
-      <HUD
-        score={hud.score}
-        level={hud.level}
-        lives={hud.lives}
-        highScore={hud.highScore}
-        visible={isPlaying}
-      />
-
-      {/* Overlays — mutually exclusive by phase */}
-      {(phase === 'wallet' || phase === 'starting') && (
-        <WalletGate
-          onReady={handleWalletReady}
-          onViewLeaderboard={phase === 'wallet' ? handleOpenLB : undefined}
-          onCancel={phase === 'starting' ? handleCancelStart : undefined}
+      <main className="game-shell">
+        <GameCanvas
+          phase={phase}
+          pulse={pulse}
+          hud={hud}
+          onScoreChange={handleScoreChange}
+          onGameOver={handleGameOver}
+          onPause={() => setPhase('paused')}
         />
+        <HUD hud={hud} pulse={pulse} visible={phase === 'playing' || phase === 'paused'} onInfo={openInfo} />
+      </main>
+
+      {phase === 'menu' && (
+        <div className="overlay" data-overlay>
+          <div className="panel" role="dialog" aria-modal="true" aria-labelledby="game-title">
+            <div className="hero-title" id="game-title">SQUEEK RUNNER</div>
+            <div className="hero-subtitle">WHEELY9000 ARCADE</div>
+            <p>Cross the lanes. A real hamster&apos;s settled work sets the pace.</p>
+            <p className="small">ARROWS / WASD TO MOVE · SPACE TO DASH<br />+1 CHARGE EVERY 8 ROWS</p>
+            <button type="button" className="primary" onClick={() => setPhase('playing')}>PLAY</button>
+            <button type="button" className="alt" onClick={() => setShowLB(true)}>LEADERBOARD</button>
+            <p className="small">Sepolia read-only · No wallet · No transactions</p>
+          </div>
+        </div>
       )}
-      {phase === 'paused' && (
-        <PauseOverlay
-          onResume={() => setPhase('playing')}
-          onQuit={handleQuit}
-        />
+
+      {phase === 'paused' && !showInfo && (
+        <PauseOverlay onResume={() => setPhase('playing')} onQuit={() => setPhase('menu')} />
       )}
-      {phase === 'over' && (
+      {phase === 'over' && runResult && (
         <GameOverOverlay
-          score={finalScore}
-          level={finalLevel}
-          onPlayAgain={handlePlayAgain}
-          onQuit={handleQuit}
+          result={runResult}
+          onPlayAgain={() => { setRunResult(null); setPhase('playing'); }}
+          onQuit={() => { setRunResult(null); setPhase('menu'); }}
         />
       )}
-
-      {/* Leaderboard — can overlay on top of wallet or over screens */}
-      {showLB && <Leaderboard onClose={handleCloseLB} />}
+      {showLB && <Leaderboard onClose={() => setShowLB(false)} />}
+      {showInfo && <InfoPanel pulse={pulse} onClose={closeInfo} />}
     </div>
   );
 }

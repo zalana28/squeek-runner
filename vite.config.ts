@@ -6,8 +6,4 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
-  define: {
-    // Allow wagmi/onchainkit to detect browser environment
-    global: 'globalThis',
-  },
 });

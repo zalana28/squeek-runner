@@ -4,8 +4,11 @@ Arcade lane-crossing yang temponya digerakkan kerja nyata seekor hamster di Sepo
 Dibangun ulang dari [frogger-base-web3](https://github.com/zalana28/frogger-base-web3); lapisan
 Base, Farcaster Mini App, OnchainKit, dan Builder Code dibuang.
 
-Status: **M0** (template masuk, belum ada lapisan Squeekchain). Blueprint lengkap: lihat
-`docs/BLUEPRINT.md`.
+Status: **M1–M6 selesai + arena 3D arcade malam** — game hamster playable dengan dunia night-city,
+skor pil di tengah, panel Squeekchain di samping pada desktop, dan tata letak khusus untuk tablet
+serta phone portrait/landscape. Verifikasi deployment, snapshot, Pace/Surge, Charge/Dash, HUD sumber,
+dan leaderboard lokal tetap terhubung. M7 (label API opsional) belum dikerjakan. Blueprint lengkap:
+lihat `docs/BLUEPRINT.md`.
 
 ## Cara kerjanya
 
